@@ -52,6 +52,10 @@ Options:
                           variable.
                         - If present, the subdirectory named 'pegs' of the directory
                           containing the peg binary.
+  --variant, -v       pattern variant name.
+  --targets, -t       comma separated list of target non-terminals
+  --arguments -a      comma separated list of pattern arguments, if root pattern
+                      is parameterised.
   --symbols, -s       comma separated list of key-value pairs, where the keys
                       refer to symbols in the pegfile that will be replaced
                       by the corresponding values prior to compiling the PEG
