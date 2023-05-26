@@ -11,4 +11,4 @@ bin           = @["peg"]
 # Dependencies
 
 requires "nim >= 1.6.10"
-requires "grammarian >= 0.2.0"
+requires "grammarian >= 0.2.1"

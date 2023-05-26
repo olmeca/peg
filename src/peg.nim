@@ -32,10 +32,10 @@
 ## [ MIT license: http://www.opensource.org/licenses/mit-license.php ]
 
 import
-  os, strutils, parseopt, pegs, terminal, sequtils, logging, streams
+  os, strutils, parseopt, pegs, terminal, sequtils, logging, streams, grammarian
 
 const
-  Version = "0.1"
+  Version = "0.2"
   Usage = "peg - PEG Utility Version " & Version & """
 
   (c) 2017 Rudi Angela
@@ -106,6 +106,7 @@ var
   filenames: seq[string] = @[]
   pattern = NIL
   patternVariant = NIL
+  patternArguments: seq[string] = @[]
   captureTargets: seq[string] = @[]
   rootPatternName = "Pattern"
   replacement = NIL
@@ -216,7 +217,9 @@ proc processString(source: string): string =
   var pegp: Peg
   var output: string
 
-  pegp = peg(pattern)
+  let grammar = newGrammar(pattern)
+  let pegstring = pegString(grammar, rootPatternName, captureTargets, patternVariant, patternArguments)
+  pegp = peg(pegstring)
 
   if optReplace in options:
     output = newStringOfCap(source.len)
@@ -250,11 +253,13 @@ proc processString(source: string): string =
           # Just send found match to output
           stdout.write(wholeMatch)
           # Append a separator line
-          stdout.write(lineSeparator & cMatchItemSeparator & lineSeparator)
+          # stdout.write(lineSeparator & cMatchItemSeparator & lineSeparator)
           stdout.flushFile()
 
         inc(lineNr, countLines(source, matchedBounds.first, matchedBounds.last))
         indexUnprocessed = matchedBounds.last + 1
+  stdout.write(lineSeparator)
+  stdout.flushFile()
 
   if {optReplace, optModify} <= options:
         output.add(substr(source, indexUnprocessed))
@@ -440,6 +445,12 @@ for kind, key, val in getopt():
       argName = val
     of "symbols", "s":
       pegParamString = val
+    of "targets", "t":
+      captureTargets = val.split(",")
+    of "variant", "v":
+      patternVariant = val
+    of "arguments", "a":
+      patternArguments = val.split(",")
     of "replace", "r":
       incl(options, optReplace)
       replacement = val
@@ -472,7 +483,6 @@ for kind, key, val in getopt():
     of "nocolor": useWriteStyled = false
     of "verbose": incl(options, optVerbose)
     of "help", "h": writeHelp()
-    of "version", "v": writeVersion()
     of "debug", "d":
       enableLogging()
     else: writeHelp()
@@ -505,13 +515,8 @@ if filenames.len == 0 and optLiteral notin options and optStdin notin options:
 
 # If the following also applies to optFilePeg then use intersection (*)
 # if {optPeg, optFilePeg} * options != {}:
-if optPeg in options:
-  if optWord in options:
-    pattern = r"(^ / !\letter)(" & pattern & r") !\letter"
-    pattern = applyOptions(pattern)
-elif optFilePeg in options:
+if optFilePeg in options:
   pattern = readPatternFile(argPatternFile)
-  pattern = applyOptions(pattern)
 
 if pegParamString != NIL:
   let kvSpecs = pegParamString.split(",")
